@@ -1,102 +1,146 @@
-import { motion } from 'framer-motion'
+import { Suspense, useRef, useState } from 'react'
+import { Canvas } from '@react-three/fiber'
+import { motion, useScroll, useTransform, type MotionValue } from 'framer-motion'
+import * as THREE from 'three'
+import Scene from './scene/Scene'
+import NoiseOverlay from './ui/NoiseOverlay'
+import Resume from './ui/Resume'
+import Works from './ui/Works'
+import LoadingScreen from './ui/LoadingScreen'
+import { useStore } from './store'
 
-interface ResumeProps {
-  lang: 'en' | 'zh'
+function Backdrop() {
+  const setActive = useStore((s) => s.setActive)
+  return (
+    <mesh position={[0, 0, -40]} onClick={() => setActive(null)}>
+      <planeGeometry args={[600, 300]} />
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+    </mesh>
+  )
 }
 
-const EXPERIENCES = [
-  {
-    period: 'Dec 2025 — Present',
-    role: 'Data & Talent Sourcing Associate',
-    company: 'Legacy Digitronics Private Limited',
-    description:
-      'Handling talent sourcing, candidate outreach, pipeline management, CRM/ATS database updates, and data operations.',
-  },
-  {
-    period: 'Nov 2025 — Dec 2025',
-    role: 'Sales Executive',
-    company: 'Compucare India Private Limited',
-    description:
-      'Managed client outreach, sales inquiries, and account updates to drive business development.',
-  },
-  {
-    period: 'Mar 2025 — Oct 2025',
-    role: 'Advisor & Customer Support Executive',
-    company: 'Concentrix',
-    description:
-      'Delivered high-quality customer support, resolved user queries efficiently, and maintained detailed activity logs.',
-  },
-  {
-    period: 'Nov 2022 — Jan 2025',
-    role: 'Event Coordinator',
-    company: 'Freelance',
-    description:
-      'Coordinated on-site logistics, team operations, and client communications for large-scale events.',
-  },
-  {
-    period: 'Oct 2020 — Jan 2022',
-    role: 'Sales Promoter',
-    company: 'Kohinoor Specialty Foods',
-    description:
-      'Engaged customers directly, presented key product value propositions, and boosted retail sales presence.',
-  },
-]
+type Lang = 'en' | 'zh'
 
-const EDUCATION = [
-  {
-    period: '2019 — 2022',
-    degree: 'Bachelor of Commerce (B.Com)',
-    school: 'M.S. University of Baroda',
+const COPY = {
+  en: {
+    title: 'About Vinay',
+    paragraphs: [
+      "I'm Vinay Rajput — a Data & Talent Sourcing Associate experienced in talent acquisition, lead generation, CRM & ATS management, and operations. I focus on connecting talent with opportunity and streamlining data workflows.",
+    ],
   },
-]
+  zh: {
+    title: 'About Vinay',
+    paragraphs: [
+      "I'm Vinay Rajput — a Data & Talent Sourcing Associate experienced in talent acquisition, lead generation, CRM & ATS management, and operations.",
+    ],
+  },
+}
 
-export default function Resume({ lang }: ResumeProps) {
+function Hero({ lang, cueOpacity }: { lang: Lang; cueOpacity: MotionValue<number> }) {
+  const { title, paragraphs } = COPY[lang]
+  const aboutRef = useRef(null)
+  const { scrollYProgress } = useScroll({
+    target: aboutRef,
+    offset: ['start 0.6', 'start start'],
+  })
+  const blur = useTransform(scrollYProgress, [0, 0.5], ['blur(0px)', 'blur(16px)'])
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
+  const titleY = useTransform(scrollYProgress, [0, 1], [0, -96])
+  const bodyY = useTransform(scrollYProgress, [0, 1], [0, -52])
+  const titleSpacing = useTransform(scrollYProgress, [0, 1], ['0.01em', '0.42em'])
   return (
-    <section className="resume-section">
-      <div className="resume-container">
-        <motion.div
-          className="resume-block"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
-          <h2 className="resume-heading">EXPERIENCE</h2>
-          <div className="resume-list">
-            {EXPERIENCES.map((exp, index) => (
-              <div className="resume-item" key={index}>
-                <div className="resume-period">{exp.period}</div>
-                <div className="resume-details">
-                  <h3 className="resume-role">{exp.role}</h3>
-                  <div className="resume-company">{exp.company}</div>
-                  <p className="resume-desc">{exp.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        <motion.div
-          className="resume-block"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <h2 className="resume-heading">EDUCATION</h2>
-          <div className="resume-list">
-            {EDUCATION.map((edu, index) => (
-              <div className="resume-item" key={index}>
-                <div className="resume-period">{edu.period}</div>
-                <div className="resume-details">
-                  <h3 className="resume-role">{edu.degree}</h3>
-                  <div className="resume-company">{edu.school}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
+    <section className="hero">
+      <motion.div
+        className="about"
+        lang={lang}
+        ref={aboutRef}
+        style={{ filter: blur, opacity }}
+      >
+        <div className="about-intro">
+          <motion.h1 className="about-title" style={{ y: titleY, letterSpacing: titleSpacing }}>
+            {title}
+          </motion.h1>
+          {paragraphs.map((p, i) => (
+            <motion.p key={i} className="about-body" style={{ y: bodyY }}>
+              {p}
+            </motion.p>
+          ))}
+        </div>
+      </motion.div>
+      <motion.div className="scroll-cue" style={{ opacity: cueOpacity }} aria-hidden="true">
+        <span className="scroll-cue-label">SCROLL DOWN</span>
+        <span className="scroll-cue-track">
+          <span className="scroll-cue-dot" />
+        </span>
+      </motion.div>
     </section>
+  )
+}
+
+export default function App() {
+  const [lang] = useState<Lang>('en')
+  const { scrollY } = useScroll()
+  const worksRef = useRef(null)
+  const { scrollYProgress: worksProgress } = useScroll({
+    target: worksRef,
+    offset: ['start end', 'start center'],
+  })
+  const fogBg = useTransform(
+    worksProgress,
+    [0, 1],
+    ['rgba(8, 11, 18, 0)', 'rgba(8, 11, 18, 0.41)']
+  )
+  const scrimOpacity = useTransform(scrollY, [0, 520], [0, 0.4])
+  const cueOpacity = useTransform(scrollY, [0, 160], [1, 0])
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 800
+  const railOpacity = useTransform(scrollY, [vh * 0.5, vh * 1.1], [0, 1])
+  const heroChromeOpacity = useTransform(scrollY, [0, 280], [1, 0])
+
+  return (
+    <>
+      <LoadingScreen />
+
+      <div className="scene-bg" style={{ pointerEvents: 'none' }}>
+        <Canvas
+          shadows={{ type: THREE.PCFShadowMap }}
+          dpr={[1, 1.5]}
+          camera={{ position: [0, 5, 19], fov: 39, near: 0.1, far: 500 }}
+          gl={{ antialias: false, stencil: false, depth: true, toneMapping: THREE.ACESFilmicToneMapping }}
+        >
+          <color attach="background" args={['#0a0e16']} />
+          <Suspense fallback={null}>
+            <Backdrop />
+            <Scene />
+          </Suspense>
+        </Canvas>
+      </div>
+
+      <motion.div className="scrim" style={{ opacity: scrimOpacity, pointerEvents: 'none' }} aria-hidden="true" />
+      <motion.div className="stage-fog" style={{ background: fogBg, pointerEvents: 'none' }} aria-hidden="true" />
+      <motion.div className="glass-rail" style={{ opacity: railOpacity, pointerEvents: 'none' }} aria-hidden="true" />
+
+      <motion.div className="hero-chrome" style={{ opacity: heroChromeOpacity, pointerEvents: 'none' }} aria-hidden="true">
+        <div className="hero-frame" />
+        <span className="hero-mark tl">+</span>
+        <span className="hero-mark tr">+</span>
+        <span className="hero-mark bl">+</span>
+        <span className="hero-mark br">+</span>
+        <div className="hero-meta hm-tl">
+          <span className="hm-name">Vinay Rajput</span>
+          <span>Data & Talent Sourcing Associate</span>
+        </div>
+        <div className="hero-meta hm-tr">Portfolio — 2026</div>
+        <div className="hero-meta hm-bl">Sourcing · CRM · Data Operations</div>
+        <div className="hero-meta hm-right">Based in Vadodara</div>
+      </motion.div>
+
+      <NoiseOverlay />
+
+      <main className="content" style={{ position: 'relative', zIndex: 10, overflowY: 'auto' }}>
+        <Hero lang={lang} cueOpacity={cueOpacity} />
+        <Resume lang={lang} />
+        <Works lang={lang} innerRef={worksRef} />
+      </main>
+    </>
   )
 }
