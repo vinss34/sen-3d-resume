@@ -1,20 +1,4 @@
 import { motion } from 'framer-motion'
-import { ZooopLogo } from './ZooopLogo'
-import { SOCIAL_ICONS } from './SocialIcons'
-import { FOCUS_POINTS } from '../data/focusPoints'
-
-const SOCIAL_LINKS = [
-  {
-    id: 'linkedin',
-    label: 'LinkedIn',
-    href: 'https://linkedin.com',
-  },
-  {
-    id: 'email',
-    label: 'Email',
-    href: 'mailto:contact@example.com',
-  },
-]
 
 const EXPERIENCES = [
   {
